@@ -6,17 +6,32 @@ export const revalidate = 60;
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function getLeaderboard(_global: boolean) {
-  const { data, error } = await supabase
+async function getLeaderboard() {
+  const { data: chars, error } = await supabase
     .from('characters')
-    .select('id, player_id, realm_level, qi_current, qi_max, spirit_root, players(username, avatar_url), sects(name)')
+    .select('id, player_id, realm_level, qi_current, qi_max, players!player_id(username, avatar_url)')
     .order('realm_level', { ascending: false })
     .order('qi_current',  { ascending: false })
     .limit(50);
 
   if (error) throw error;
-  return data ?? [];
+  if (!chars || chars.length === 0) return [];
+
+  // Second pass: get sect names for each character via sect_members
+  const charIds = chars.map(c => c.id);
+  const { data: memberships } = await supabase
+    .from('sect_members')
+    .select('character_id, sects!sect_id(name)')
+    .in('character_id', charIds);
+
+  const sectByChar: Record<string, string> = {};
+  for (const m of (memberships ?? [])) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sectName = (m.sects as any)?.name;
+    if (sectName) sectByChar[m.character_id] = sectName;
+  }
+
+  return chars.map(c => ({ ...c, sectName: sectByChar[c.id] ?? null }));
 }
 
 export default async function LeaderboardPage({
@@ -25,7 +40,7 @@ export default async function LeaderboardPage({
   searchParams: { scope?: string };
 }) {
   const isGlobal = searchParams.scope === 'global';
-  const rows = await getLeaderboard(isGlobal);
+  const rows = await getLeaderboard();
 
   return (
     <div className="space-y-8">
@@ -40,7 +55,7 @@ export default async function LeaderboardPage({
                 : 'text-ink-200 border-ink-500 hover:border-gold-500'
             }`}
           >
-            This Server
+            Server
           </a>
           <a
             href="/leaderboard?scope=global"
@@ -71,11 +86,12 @@ export default async function LeaderboardPage({
             </tr>
           </thead>
           <tbody>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(rows as any[]).map((char, i) => {
-              const player = char.players as { username: string; avatar_url: string | null } | null;
-              const sect   = char.sects   as { name: string } | null;
-              const pct    = char.qi_max > 0 ? Math.floor((char.qi_current / char.qi_max) * 100) : 0;
+            {rows.map((char, i) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const player = (char as any).players as { username: string; avatar_url: string | null } | null;
+              const pct    = Number(char.qi_max) > 0
+                ? Math.floor((Number(char.qi_current) / Number(char.qi_max)) * 100)
+                : 0;
 
               return (
                 <tr
@@ -106,7 +122,7 @@ export default async function LeaderboardPage({
                     <div className="text-right text-xs text-ink-500 mt-0.5">{pct}%</div>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell text-sm text-ink-300 font-cinzel">
-                    {sect?.name ?? '—'}
+                    {char.sectName ?? '—'}
                   </td>
                 </tr>
               );
