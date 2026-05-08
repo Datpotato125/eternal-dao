@@ -26,15 +26,8 @@ export default function LoginScreen() {
       if (error) throw error;
       if (!data.url) throw new Error('No OAuth URL returned');
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-      if (result.type === 'success' && result.url) {
-        const url  = new URL(result.url);
-        const code = url.searchParams.get('code');
-        if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
-        }
-      }
+      // Just open the browser — auth/callback.tsx handles the code exchange
+      await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
     } catch (e) {
       console.error('Discord login error:', e);
     } finally {
