@@ -1,12 +1,17 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
+import { Redirect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/store/useAuth';
 import { COLORS } from '@/constants/theme';
 
 export default function LoginScreen() {
+  const { session } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  if (session) return <Redirect href="/(tabs)" />;
 
   const handleDiscordLogin = async () => {
     setLoading(true);
