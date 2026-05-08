@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a14;
+  --surface: #12121e;
+  --border: #2a2440;
+  --text-primary: #e2d5b0;
+  --text-muted: #8a7d60;
+  --gold: #c9a84c;
+  --jade: #4a8c62;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1.1rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cinzel', serif;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .border-gold { border-color: var(--gold); }
+  .gold-glow { text-shadow: 0 0 20px rgba(201, 168, 76, 0.4); }
+}

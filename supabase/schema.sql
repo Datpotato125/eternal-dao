@@ -33,7 +33,10 @@ CREATE TABLE characters (
   breakthrough_attempts INT         NOT NULL DEFAULT 0,
   titles                TEXT[]      DEFAULT '{}',
   cosmetic_aura         TEXT,
-  created_at            TIMESTAMPTZ DEFAULT NOW(),
+  pvp_wins               INT         NOT NULL DEFAULT 0,
+  pvp_losses             INT         NOT NULL DEFAULT 0,
+  cultivation_started_at TIMESTAMPTZ,
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
   last_seen             TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(player_id, server_id)
 );

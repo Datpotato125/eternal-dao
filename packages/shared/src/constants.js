@@ -24,7 +24,7 @@ export const SPIRIT_ROOTS = [
   { id: 'chaos',   label: 'Chaos Root',   rarity: 'legendary', cultivation_bonus: 1.1  },
 ];
 
-export const BASE_CULTIVATION_RATE = 10; // Qi per hour at realm 1
+export const BASE_CULTIVATION_RATE = 100; // Qi per hour at realm 1
 export const OFFLINE_CAP_HOURS = 8;
 
 export const getRealm = (id) => REALMS.find(r => r.id === id) ?? REALMS[0];
