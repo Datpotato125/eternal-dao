@@ -26,8 +26,17 @@ export default function LoginScreen() {
       if (error) throw error;
       if (!data.url) throw new Error('No OAuth URL returned');
 
-      // Just open the browser — auth/callback.tsx handles the code exchange
-      await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+      // On Android, openAuthSessionAsync captures the full URL with the code.
+      // auth/callback.tsx handles the case where Expo Router gets it instead.
+      if (result.type === 'success' && result.url) {
+        const url  = new URL(result.url);
+        const code = url.searchParams.get('code');
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        }
+      }
     } catch (e) {
       console.error('Discord login error:', e);
     } finally {

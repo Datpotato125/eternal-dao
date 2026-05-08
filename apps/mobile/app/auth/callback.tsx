@@ -10,33 +10,35 @@ export default function AuthCallback() {
   const { session, setSession, fetchCharacter } = useAuth();
   const router  = useRouter();
 
+  // Redirect to tabs as soon as session is available (set by either this
+  // component or by login.tsx's concurrent exchange via openAuthSessionAsync)
   useEffect(() => {
-    // Already authenticated (e.g. openAuthSessionAsync exchanged the code first)
-    if (session) {
-      router.replace('/(tabs)');
-      return;
-    }
+    if (session) router.replace('/(tabs)');
+  }, [session]);
 
+  // Exchange code if Expo Router received it in the deep-link params
+  useEffect(() => {
     const { code, error } = params;
-
-    if (error || !code) {
-      // No code in URL — wait briefly in case onAuthStateChange fires from
-      // a concurrent exchange in login.tsx, then fall back to login
-      const timeout = setTimeout(() => router.replace('/login'), 3000);
-      return () => clearTimeout(timeout);
-    }
+    if (!code || error || session) return;
 
     supabase.auth.exchangeCodeForSession(code).then(({ data, error: exchangeError }) => {
       if (data.session && !exchangeError) {
         setSession(data.session);
         fetchCharacter();
-        router.replace('/(tabs)');
-      } else {
-        console.error('Auth exchange failed:', exchangeError?.message);
-        router.replace('/login');
+        // navigation handled by the session useEffect above
       }
+      // Don't force /login on failure — login.tsx may be exchanging
+      // concurrently. The safety timeout below handles the real failure case.
     });
-  }, [session]);
+  }, []);
+
+  // Safety net: if no session after 6 s, something went wrong → back to login
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!useAuth.getState().session) router.replace('/login');
+    }, 6000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg, justifyContent: 'center', alignItems: 'center' }}>
