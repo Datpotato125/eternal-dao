@@ -28,8 +28,6 @@ export default function LoginScreen() {
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
-      // On Android, openAuthSessionAsync captures the full URL with the code.
-      // auth/callback.tsx handles the case where Expo Router gets it instead.
       if (result.type === 'success' && result.url) {
         const url  = new URL(result.url);
         const code = url.searchParams.get('code');

@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/store/useAuth';
 import { COLORS } from '@/constants/theme';
+
+// Signal to openAuthSessionAsync in login.tsx that the redirect landed here.
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthCallback() {
   const params  = useLocalSearchParams<{ code?: string; error?: string }>();
@@ -25,10 +29,7 @@ export default function AuthCallback() {
       if (data.session && !exchangeError) {
         setSession(data.session);
         fetchCharacter();
-        // navigation handled by the session useEffect above
       }
-      // Don't force /login on failure — login.tsx may be exchanging
-      // concurrently. The safety timeout below handles the real failure case.
     });
   }, []);
 

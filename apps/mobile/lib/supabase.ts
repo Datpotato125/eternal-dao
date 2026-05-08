@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
 // React Native doesn't have the Web Locks API that @supabase/auth-js requires.
-// Provide a no-op shim so session management works without distributed locking.
 if (!globalThis.navigator?.locks) {
   (globalThis as any).navigator = {
     ...(globalThis.navigator ?? {}),
@@ -16,10 +15,43 @@ if (!globalThis.navigator?.locks) {
   };
 }
 
+// In-memory fallback used when SecureStore is unavailable (some Android devices
+// require a screen lock / hardware security module for SecureStore to work).
+const memoryFallback: Record<string, string> = {};
+
 const SecureStoreAdapter = {
-  getItem:    (key: string) => SecureStore.getItemAsync(key),
-  setItem:    (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  getItem: async (key: string): Promise<string | null> => {
+    // Memory is always authoritative for the current session.
+    if (key in memoryFallback) return memoryFallback[key];
+    try {
+      const val = await SecureStore.getItemAsync(key, {
+        keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+      });
+      if (val !== null) memoryFallback[key] = val;
+      return val;
+    } catch {
+      return null;
+    }
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    // Write to memory first so it's always retrievable this session.
+    memoryFallback[key] = value;
+    try {
+      await SecureStore.setItemAsync(key, value, {
+        keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+      });
+    } catch {
+      // already in memory — no-op
+    }
+  },
+  removeItem: async (key: string): Promise<void> => {
+    delete memoryFallback[key];
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // ignore
+    }
+  },
 };
 
 export const supabase = createClient(
@@ -31,6 +63,7 @@ export const supabase = createClient(
       autoRefreshToken:   true,
       persistSession:     true,
       detectSessionInUrl: false,
+      flowType:           'pkce',
     },
   }
 );
