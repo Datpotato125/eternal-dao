@@ -12,6 +12,7 @@ export interface Character {
   spirit_root: string;
   pvp_wins: number;
   pvp_losses: number;
+  cultivation_started_at: string | null;
   players: { username: string; avatar_url: string | null } | null;
 }
 
@@ -47,7 +48,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       supabase.from('players').select('username').eq('discord_id', discordId).maybeSingle(),
       supabase
         .from('characters')
-        .select('id, server_id, realm_level, qi_current, qi_max, cultivation_rate, spirit_root, pvp_wins, pvp_losses, players!player_id(username, avatar_url)')
+        .select('id, server_id, realm_level, qi_current, qi_max, cultivation_rate, spirit_root, pvp_wins, pvp_losses, cultivation_started_at, players!player_id(username, avatar_url)')
         .eq('player_id', discordId)
         .maybeSingle(),
     ]);
