@@ -1,6 +1,9 @@
 {
   "name": "@eternal-dao/desktop",
+  "productName": "Eternal Dao",
+  "description": "Cultivation RPG desktop client",
   "version": "1.0.0",
+  "author": "Datpotato125",
   "private": true,
   "main": ".vite/build/main.js",
   "scripts": {

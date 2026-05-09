@@ -5,6 +5,9 @@ import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-nati
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    name: 'eternal-dao',
+    executableName: 'eternal-dao',
+    appVersion: '1.0.0',
     protocols: [
       {
         name: 'Eternal Dao',
@@ -18,6 +21,8 @@ const config: ForgeConfig = {
       name: '@electron-forge/maker-squirrel',
       config: {
         name: 'EternalDao',
+        setupExe: 'EternalDaoSetup.exe',
+        noMsi: true,
       },
     },
     {
