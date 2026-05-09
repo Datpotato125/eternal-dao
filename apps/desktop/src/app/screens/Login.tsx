@@ -15,12 +15,16 @@ export default function Login() {
         options: { redirectTo: REDIRECT_URI, skipBrowserRedirect: true },
       });
       if (error) throw error;
-      if (data.url) await window.electronAPI.openExternal(data.url);
+      if (data.url) {
+        await window.electronAPI.openExternal(data.url);
+        // Reset after 3 min — if deep-link never arrives the button stays frozen otherwise
+        setTimeout(() => setLoading(false), 3 * 60 * 1000);
+      }
     } catch (e) {
       console.error('Discord login error:', e);
+      alert(`Failed to start Discord login:\n${(e as Error).message}`);
       setLoading(false);
     }
-    // Don't setLoading(false) on success — wait for deep-link callback
   };
 
   return (

@@ -30,19 +30,39 @@ export default function App() {
 
     // Handle OAuth deep-link callback: eternal-dao://auth/callback?code=...
     const unsubscribe = window.electronAPI.onDeepLink((url) => {
+      console.log('[deep-link] received:', url);
       try {
         const parsed = new URL(url);
         const code = parsed.searchParams.get('code');
-        if (code) {
-          supabase.auth.exchangeCodeForSession(code).then(({ data }) => {
-            if (data.session) {
-              setSession(data.session);
-              fetchCharacter();
-            }
-          });
+        const error = parsed.searchParams.get('error');
+        const errorDesc = parsed.searchParams.get('error_description');
+
+        if (error) {
+          console.error('[deep-link] OAuth error:', error, errorDesc);
+          alert(`Login failed: ${error}\n${errorDesc ?? ''}`);
+          return;
         }
-      } catch {
-        console.error('Failed to parse deep-link URL:', url);
+
+        if (!code) {
+          console.error('[deep-link] No code in URL:', url);
+          alert(`Login failed: no authorization code in callback URL.\n\n${url}`);
+          return;
+        }
+
+        supabase.auth.exchangeCodeForSession(code).then(({ data, error: exchErr }) => {
+          if (exchErr) {
+            console.error('[deep-link] exchangeCodeForSession error:', exchErr);
+            alert(`Login failed during token exchange:\n${exchErr.message}`);
+            return;
+          }
+          if (data.session) {
+            setSession(data.session);
+            fetchCharacter();
+          }
+        });
+      } catch (e) {
+        console.error('[deep-link] Failed to parse URL:', url, e);
+        alert(`Login failed: could not parse callback URL.\n\n${url}`);
       }
     });
 

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, shell } from 'electron';
 import squirrelStartup from 'electron-squirrel-startup';
 import path from 'path';
 
@@ -48,6 +48,11 @@ function createWindow() {
   }
 
   mainWindow.on('closed', () => { mainWindow = null; });
+
+  // F12 opens DevTools in production for debugging
+  globalShortcut.register('F12', () => {
+    mainWindow?.webContents.toggleDevTools();
+  });
 }
 
 // On Windows: second-instance fires when user clicks the deep-link while app is running
