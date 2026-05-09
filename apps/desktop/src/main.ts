@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import squirrelStartup from 'electron-squirrel-startup';
 import path from 'path';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-if (require('electron-squirrel-startup')) app.quit();
+if (squirrelStartup) app.quit();
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
