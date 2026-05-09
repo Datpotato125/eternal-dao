@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Text } from 'pixi.js/unsafe-eval';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../store/useAuth';
 import { COLORS, REALM_COLORS } from '../constants/theme';
@@ -43,54 +43,68 @@ export default function WorldMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const appRef       = useRef<Application | null>(null);
   const tickRef      = useRef(0);
-  const [loading, setLoading]   = useState(true);
-  const [total, setTotal]       = useState(0);
+  const [status, setStatus]   = useState<'loading' | 'ready' | 'error'>('loading');
+  const [total, setTotal]     = useState(0);
+  const [errMsg, setErrMsg]   = useState('');
 
   useEffect(() => {
     let active = true;
 
     async function init() {
-      const popByRealm: Record<number, number> = {};
+      try {
+        // ── 1. Fetch population ───────────────────────────────────────────────
+        const popByRealm: Record<number, number> = {};
 
-      const builder = supabase.from('characters').select('realm_level');
-      const finalQuery = character?.server_id
-        ? builder.eq('server_id', character.server_id)
-        : builder;
-      const { data } = await finalQuery;
+        const builder = supabase.from('characters').select('realm_level');
+        const finalQuery = character?.server_id
+          ? builder.eq('server_id', character.server_id)
+          : builder;
+        const { data, error } = await finalQuery;
 
-      if (!active) return;
+        if (!active) return;
+        if (error) throw new Error(error.message);
 
-      if (data) {
-        let n = 0;
-        for (const row of data) {
-          popByRealm[row.realm_level] = (popByRealm[row.realm_level] ?? 0) + 1;
-          n++;
+        if (data) {
+          let n = 0;
+          for (const row of data) {
+            popByRealm[row.realm_level] = (popByRealm[row.realm_level] ?? 0) + 1;
+            n++;
+          }
+          setTotal(n);
         }
-        setTotal(n);
+
+        // ── 2. Init Pixi ─────────────────────────────────────────────────────
+        const app = new Application();
+        await app.init({
+          width: W, height: H,
+          background: hex(COLORS.bg),
+          antialias: true,
+          resolution: window.devicePixelRatio || 1,
+          autoDensity: true,
+        });
+
+        if (!active) { app.destroy(true); return; }
+
+        appRef.current = app;
+        containerRef.current!.appendChild(app.canvas as HTMLCanvasElement);
+
+        buildScene(app, popByRealm, character?.realm_level ?? 0);
+        setStatus('ready');
+
+      } catch (e) {
+        if (active) setErrMsg(e instanceof Error ? e.message : String(e));
+        if (active) setStatus('error');
       }
-      setLoading(false);
-
-      const app = new Application();
-      await app.init({
-        width: W, height: H,
-        background: hex(COLORS.bg),
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
-      });
-
-      if (!active) { app.destroy(true); return; }
-      appRef.current = app;
-      if (containerRef.current) containerRef.current.appendChild(app.canvas as HTMLCanvasElement);
-      buildScene(app, popByRealm, character?.realm_level ?? 0);
     }
 
     init();
 
     return () => {
       active = false;
-      appRef.current?.destroy(true);
-      appRef.current = null;
+      if (appRef.current) {
+        appRef.current.destroy(true);
+        appRef.current = null;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [character?.server_id, character?.realm_level]);
@@ -99,24 +113,20 @@ export default function WorldMap() {
     const maxPop = Math.max(1, ...Object.values(pop));
 
     // Background starfield
+    const starContainer = new Container();
     for (let i = 0; i < 70; i++) {
       const s = new Graphics();
       s.circle(0, 0, Math.random() * 1.1 + 0.3);
       s.fill({ color: 0xffffff, alpha: 0.05 + Math.random() * 0.1 });
       s.x = Math.random() * W;
       s.y = Math.random() * H;
-      app.stage.addChild(s);
+      starContainer.addChild(s);
     }
-
-    // Vertical gradient overlay (top = gold tint, bottom = muted)
-    const veil = new Graphics();
-    veil.rect(0, 0, W, H / 2);
-    veil.fill({ color: hex(COLORS.gold), alpha: 0.018 });
-    app.stage.addChild(veil);
+    app.stage.addChild(starContainer);
 
     // Axis labels
     const heavenLbl = new Text({
-      text: '☯  H E A V E N \'S   P E A K',
+      text: "☯  H E A V E N ' S   P E A K",
       style: { fill: COLORS.gold, fontSize: 9, letterSpacing: 2 },
     });
     heavenLbl.anchor.set(0.5, 0);
@@ -152,7 +162,7 @@ export default function WorldMap() {
       p.fill({ color: hex(COLORS.jade), alpha: 0.1 });
       p.x = Math.random() * W;
       p.y = Math.random() * H;
-      p._vy   = 0.28 + Math.random() * 0.42;
+      p._vy    = 0.28 + Math.random() * 0.42;
       p._phase = Math.random() * Math.PI * 2;
       particles.addChild(p);
     }
@@ -238,7 +248,7 @@ export default function WorldMap() {
 
       for (const g of nodeGlows) g.scale.set(pulse);
 
-      particles.children.forEach((c, i) => {
+      particles.children.forEach((c: unknown, i: number) => {
         const p = c as Graphics & { _vy: number; _phase: number };
         p.y -= p._vy;
         p.x += Math.sin(t * 0.013 + p._phase) * 0.38;
@@ -257,7 +267,7 @@ export default function WorldMap() {
           {character?.server_id
             ? <>Server <span style={{ color: COLORS.text }}>{character.server_id}</span></>
             : 'All servers'}
-          {!loading && (
+          {status !== 'loading' && (
             <span style={{ color: COLORS.border }}>
               {' '}· {total} cultivator{total !== 1 ? 's' : ''} active
             </span>
@@ -265,20 +275,33 @@ export default function WorldMap() {
         </div>
       </div>
 
-      {loading && (
-        <div style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 16 }}>
-          Loading realm data…
+      {status === 'error' && (
+        <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 16 }}>
+          Failed to load map: {errMsg}
         </div>
       )}
 
+      {/* Canvas container — always in DOM so ref is stable; Pixi appends its canvas here */}
       <div
         ref={containerRef}
         style={{
+          width: W, height: H,
           borderRadius: 10, overflow: 'hidden',
           border: `1px solid ${COLORS.border}`,
-          display: 'inline-block',
+          background: COLORS.bg,
+          position: 'relative',
         }}
-      />
+      >
+        {status === 'loading' && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: COLORS.textMuted, fontSize: 13,
+          }}>
+            Loading realm data…
+          </div>
+        )}
+      </div>
 
       <div style={{ marginTop: 14, display: 'flex', gap: 24, flexWrap: 'wrap', fontSize: 11, color: COLORS.textMuted }}>
         <span><span style={{ color: COLORS.gold, fontWeight: 700 }}>▶</span> Your realm</span>

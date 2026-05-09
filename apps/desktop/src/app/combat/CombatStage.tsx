@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Container, Graphics, Text } from 'pixi.js/unsafe-eval';
 import { COLORS } from '../constants/theme';
 
 export interface CombatStageRef {
@@ -109,7 +109,7 @@ const CombatStage = forwardRef<CombatStageRef, Props>(({ playerName, enemyName }
       if (enemyOrbRef.current?.children[0])  enemyOrbRef.current.children[0].scale.set(pulse);
 
       // Drift particles
-      particles.children.forEach((c) => {
+      particles.children.forEach((c: unknown) => {
         const p = c as Graphics & { _vx: number };
         p.y -= 0.22;
         p.x += p._vx;
