@@ -2,13 +2,16 @@ import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-interface Character {
+export interface Character {
   id: string;
+  server_id: string;
   realm_level: number;
   qi_current: number;
   qi_max: number;
   cultivation_rate: number;
   spirit_root: string;
+  pvp_wins: number;
+  pvp_losses: number;
   players: { username: string; avatar_url: string | null } | null;
 }
 
@@ -44,7 +47,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       supabase.from('players').select('username').eq('discord_id', discordId).maybeSingle(),
       supabase
         .from('characters')
-        .select('id, realm_level, qi_current, qi_max, cultivation_rate, spirit_root, players!player_id(username, avatar_url)')
+        .select('id, server_id, realm_level, qi_current, qi_max, cultivation_rate, spirit_root, pvp_wins, pvp_losses, players!player_id(username, avatar_url)')
         .eq('player_id', discordId)
         .maybeSingle(),
     ]);
