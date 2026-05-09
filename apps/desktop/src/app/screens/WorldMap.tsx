@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js/unsafe-eval';
+import { Application, Container, Graphics, Text } from 'pixi.js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../store/useAuth';
 import { COLORS, REALM_COLORS } from '../constants/theme';

@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js/unsafe-eval';
+import { Application, Container, Graphics, Text } from 'pixi.js';
 import { COLORS } from '../constants/theme';
 
 export interface CombatStageRef {
