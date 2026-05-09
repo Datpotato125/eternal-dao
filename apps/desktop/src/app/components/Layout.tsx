@@ -6,6 +6,7 @@ const NAV = [
   { path: '/dashboard', label: '⚡ Dashboard' },
   { path: '/combat',    label: '⚔️  Combat'   },
   { path: '/world',     label: '🌌 World Map' },
+  { path: '/trading',   label: '🏪 Trading'   },
   { path: '/sect',      label: '🏯 Sect'      },
   { path: '/realms',    label: '📜 Realms'    },
   { path: '/profile',   label: '👤 Profile'   },

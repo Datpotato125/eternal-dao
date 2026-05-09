@@ -7,6 +7,7 @@ import Login from './screens/Login';
 import Dashboard from './screens/Dashboard';
 import Combat from './screens/Combat';
 import WorldMap from './screens/WorldMap';
+import Trading from './screens/Trading';
 import Sect from './screens/Sect';
 import Realms from './screens/Realms';
 import Profile from './screens/Profile';
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/combat"    element={<Combat />} />
           <Route path="/world"     element={<WorldMap />} />
+          <Route path="/trading"   element={<Trading />} />
           <Route path="/sect"      element={<Sect />} />
           <Route path="/realms"    element={<Realms />} />
           <Route path="/profile"   element={<Profile />} />
