@@ -1,5 +1,5 @@
 {
   "name": "eternal-dao",
   "private": true,
-  "workspaces": ["apps/web", "packages/*"]
+  "workspaces": ["apps/web", "apps/bot", "packages/*"]
 }
